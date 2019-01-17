@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Rules xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="./rules.xsd">
+    <VersionDefinition>
+        //pragmaDirective[pragmaName='solidity']/pragmaValue/version/versionConstraint/text()
+    </VersionDefinition>
+    <Rule id="SOLIDITY_BALANCE_EQUALITY">
+      <Pattern id="5094ad" severity="2">
+            //expression[expression//environmentalVariableDefinition[matches(text()[1],"^this.balance$")]][matches(text()[1],"^==$")]
+        <!--
+		从根节点递归遍历expression，选择满足下面两个条件的节点
+		1. 从expression 开始遍历environmentalVariableDefinition,满足含有this.balance的语句
+		2. 匹配含有 ==   的语句
+		-->
+		</Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_BYTES_BYTE">
+        <Pattern id="f13a9f" severity="1">
+            //typeName[typeName/elementaryTypeName[text()[1]="byte"]][matches(text()[1],"^\[.*\]$")]
+			<!--
+			从根节点开始遍历寻找typeName，找到后，从typeName找子集elementaryTypeName,从中寻找byte的节点
+			byte后面的应该是[xxxxxx]其中xxxxxxxx可是任意非\n的值
+			-->
+        </Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_CALL_VALUE">
+        <Pattern id="cc2e04" severity="3">
+            //externalFunctionCall/functionNameAndArgs[functionName/identifier[matches(text()[1],"^call$")]][functionName/identifier[matches(text()[1],"^value$")]][not(callArguments/callArgument)]
+        <!--
+		 从根节点开始遍历寻找externalFunctionCall，若其有子集functionNameAndArgs，寻找能匹配的functionName的子集有identifier的值为call、value并且不是callArguments和callArgument的节点。
+		-->
+		</Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_DOS_WITH_THROW">
+        <Pattern id="637fdc" severity="3">
+            //ifStatement[ifCondition//externalFunctionCall][block/statement//throwStatement or block/statement//simpleStatement/expressionStatement/expression/primaryExpression/identifier[text()[1]="revert"]]
+        <!--
+		从根节点开始遍历寻找ifStatement，找到后，去找满足 externalFunctionCall 有抛出语句和含有revert语句的节点
+		-->
+		</Pattern>
+        <Pattern id="efb788" severity="2">
+            //forStatement/expression//externalFunctionCall
+			<!--
+			从根节点开始遍历寻找forStatement，其下有子集expression，再在其下遍历寻找externalFunctionCall
+			-->
+        </Pattern>
+        <Pattern id="04242c" severity="2">
+            //whileStatement/whileCondition//externalFunctionCall
+			<!--
+			从根节点开始遍历寻找whileStatement，其下有子集whileCondition，再在其下遍历寻找externalFunctionCall
+			-->
+        </Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_ERC20_API_VIOLATION">
+        <Pattern id="550a42" severity="1">
+            //contractDefinition[inheritanceSpecifier//identifier[matches(text()[1],"token","i")]]//functionDefinition[identifier[matches(text()[1],"^approve|transfer(From)?$")]][.//functionCall/internalFunctionCall/functionName/identifier[text()[1]="require"] or .//throwStatement or .//primaryExpression/identifier[text()[1]="revert"]]
+        <!--
+		太长了。。没看懂，写不下去了
+		从根节点遍历寻找contractDefinition,其下有子集inheritanceSpecifier，然后遍历其子集寻找identifier中满足token和i的节点，在这个节点下遍历寻找
+		-->
+		</Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_GAS_LIMIT_AND_LOOPS">
+        <Pattern id="f6f853" severity="2">
+            //forStatement[expression[1]/expression[2][functionCall or primaryExpression/identifier]]
+			<!--
+			从根节点开始遍历寻找forStatement，满足expression[1]下的expression[2]中为functionCall或者是primaryExpression下的identifier。
+			-->
+        </Pattern>
+        <Pattern id="38f6c7" severity="2">
+            //whileStatement[whileCondition/descendant::*[functionCall]]
+			<!--
+			从根节点开始遍历寻找whileStatement,然后找满足whileCondition的所有后代中的含有functionCall的节点
+			-->
+        </Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_INTEGER_DIVISION">
+        <Pattern id="8e0621" severity="1">
+            //expression[expression[1]//numberLiteral][text()[1]="/"][expression[2]//numberLiteral]
+        </Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_LOCKED_MONEY">
+        <Pattern id="30281d" severity="1">
+            //contractDefinition[contractPartDefinition/functionDefinition/stateMutability/payableType[matches(text()[1],"^payable$")] and not(contractPartDefinition/functionDefinition//functionCall/internalFunctionCall/functionName/identifier[text()[1]="suicide"]) and not(contractPartDefinition/functionDefinition//externalFunctionCall/functionNameAndArgs/functionName/identifier[matches(text()[1],"^transfer|send$")])]
+        <!--
+		有payable，但是没有suicide没有transfer或者是send
+		-->
+		</Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_MALICIOUS_LIBRARIES">
+        <Pattern id="a0298c" severity="1">
+            //contractDefinition[text()[1]="library"]
+			<!--
+			刚开始就引用library
+			-->
+        </Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_PRAGMAS_VERSION">
+        <Pattern id="23fc32" severity="1">
+            //pragmaDirective/pragmaValue//versionOperator
+			<!--
+			全是pragma solidity ^0.4.5; 中的^
+			-->
+        </Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_PRIVATE_MODIFIER">
+        <Pattern id="5616b2" severity="1">
+            //stateVariableDeclaration/visibleType[text()[1]="private"]
+			<!--
+			判断变量的类型是private的
+			-->
+        </Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_REDUNDANT_FALLBACK_REJECT">
+        <Pattern id="b85a32" severity="1">
+            //sourceUnit[pragmaDirective/pragmaValue/version/versionConstraint[versionLiteral &gt;= "0.4.0"]]/contractDefinition/contractPartDefinition/functionFallBackDefinition[stateMutability/payableType[text()[1]="payable"]][block/statement/throwStatement]
+        <!--
+		版本大于0.4.0的时候，？？？？
+		-->
+		</Pattern>
+    </Rule>    
+    <Rule id="SOLIDITY_REENTRANCY_EXTERNAL_CALL">
+        <Pattern id="de222d" severity="3">
+            //statement[simpleStatement/expressionStatement/expression/functionCall/externalFunctionCall][following-sibling::*[simpleStatement/expressionStatement/expression[not (functionCall/externalFunctionCall)]]]
+        <!--
+		following-sibling 当前节点之后的所有节点
+		-->
+		</Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_SEND">
+        <Pattern id="430636" severity="2">
+            //functionName/identifier[text()[1]="send"]
+        </Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_STYLE_GUIDE_VIOLATION">
+        <Pattern id="343033" severity="1">
+            //eventDefinition/identifier[matches(text()[1],"^[a-z]")]
+			<!--
+			匹配以小写字母开头的字符串
+			-->
+        </Pattern>
+        <!--
+        <Pattern id="b0dbcd" severity="1">
+            //functionDefinition[identifier[matches(text()[1],"^[A-Z]")]][not(identifier =//ancestor::*/contractDefinition/identifier)]
+
+        </Pattern>
+    -->
+    </Rule>
+    <Rule id="SOLIDITY_TX_ORIGIN">
+        <Pattern id="12e802" severity="2">
+            //environmentalVariableDefinition[matches(text()[1],"^tx.origin$")]
+        </Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_UNCHECKED_CALL">
+        <Pattern id="f39eed" severity="3">
+            //externalFunctionCall[functionNameAndArgs/functionName/identifier[matches(text()[1],"^call|delegatecall|send$")]][not(ancestor::ifCondition)]
+        </Pattern>
+    </Rule>
+    <!--
+    <Rule id="SOLIDITY_UNCHECKED_MATH">
+        <Pattern id="63d8f9" severity="1">
+            //statement[descendant::*[matches(text()[1],"\+|\-|\*")]][not(ancestor::statement)]
+        </Pattern>
+    </Rule>
+    -->
+    <Rule id="SOLIDITY_VAR">
+        <Pattern id="d28aa7" severity="2">
+            //variableDeclaration[typeName/elementaryTypeName[matches(text()[1],"^var$")]][expression//primaryExpression/numberLiteral[matches(text()[1],"^[0-9]+$")]]
+        <!--
+		以数字开头，长度至少为2的字符串
+		-->
+		</Pattern>
+        <Pattern id="f77619" severity="1">
+            //variableDeclaration[typeName/elementaryTypeName[matches(text()[1],"^var$")]][expression/primaryExpression/identifier]
+        </Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_VISIBILITY">
+        <Pattern id="910067" severity="1">
+            //contractPartDefinition/functionDefinition[not(visibleType)]
+        </Pattern>
+        <Pattern id="b51ce0" severity="1">
+            //contractPartDefinition/stateVariableDeclaration[not(visibleType)]
+        </Pattern>
+    </Rule>
+    <!--added by zyx-->
+    <Rule id="SOLIDITY_ACCESSCONTROL">
+        <Pattern id="123456" severity="2">
+            //functionDefinition[identifier[text()[1] = //contractDefinition/identifier]][visibleType[text()[1]="public"] or not(visibleType)]
+        </Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_HASH_COLLISION">
+
+        <Pattern id="123457" severity="2">
+            <!--
+            多个map
+            -->
+            //contractDefinition[contractPartDefinition/stateVariableDeclaration[typeName/mappingSt]/identifier != descendant-or-self::contractPartDefinition/stateVariableDeclaration[typeName/mappingSt]/identifier ]
+        </Pattern>
+        <Pattern id="123458" severity="2">
+            <!--
+            map和不定长数组
+            -->
+            //contractDefinition[ contractPartDefinition/stateVariableDeclaration/typeName/typeName/elementaryTypeName and not(contractPartDefinition/stateVariableDeclaration/typeName//numberLiteral)][contractPartDefinition/stateVariableDeclaration/typeName/mappingSt ]
+        </Pattern>
+
+    </Rule>
+    <Rule id="SOLIDITY_INTEGER_OVERFLOW">
+        <Pattern id="d82aa7" severity="2">
+            //forStatement/simpleStatement/variableDeclarationStatement/variableDeclaration[typeName/elementaryTypeName[matches(text()[1],"^var$")]][expression//primaryExpression/numberLiteral[matches(text()[1],"^[0-9]+$")]]
+        </Pattern>
+    </Rule>
+    <Rule id="SOLIDITY_INTEGER_OVERFLOW_CASE2">
+        <Pattern id="561165" severity="2">
+            //functionDefinition/block [descendant::*[matches(text()[1],"\+|\-|\*")]][not(ancestor::statement)][.//functionCall/internalFunctionCall/functionName/identifier[text()[1]="require"]][.//functionCall/internalFunctionCall/callArguments/callArgument [descendant::*[matches(text()[1],"^\+|\-|\*$")]]][not(ancestor::expression)]
+        </Pattern>
+    </Rule>
+    <Rule id="DEPENDENCE_ON_PREDICTABLE_VARS">
+        <Pattern id="1955d9" severity="2">
+            //environmentalVariableDefinition[text()[1]="now"]
+        </Pattern>
+        <Pattern id="da0c53" severity="2">
+            //environmentalVariableDefinition[matches(text()[1],"^block.timestamp$")]
+        </Pattern>
+        <Pattern id="da0c54" severity="2">
+            //environmentalVariableDefinition[matches(text()[1],"^block.coinbase$")]
+        </Pattern>
+        <Pattern id="da0c55" severity="2">
+            //environmentalVariableDefinition[matches(text()[1],"^block.gaslimit$")]
+        </Pattern>
+        <Pattern id="da0c56" severity="2">
+            //environmentalVariableDefinition[matches(text()[1],"^block.number$")]
+        </Pattern>
+    </Rule>
+</Rules>
