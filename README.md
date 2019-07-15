@@ -1,2 +1,2 @@
 # NeuCheck
-An efficient and lightweight smart contracts analysis tool
+A More Practical Ethereum Smart Contract Security Analysis Tool
